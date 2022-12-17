@@ -12,7 +12,7 @@
           <router-link
             v-if="previousPage"
             role="link"
-            :to="{ name: JobResults, query: { page: previousPage } }"
+            :to="{ query: { page: previousPage } }"
             class="mx-3 text-sm font-semibold text-brand-blue-1"
             >Previous</router-link
           >
@@ -20,7 +20,7 @@
           <router-link
             v-if="nextPage"
             role="link"
-            :to="{ name: JobResults, query: { page: nextPage } }"
+            :to="{ query: { page: nextPage } }"
             class="mx-3 text-sm font-semibold text-brand-blue-1"
             >Next</router-link
           >
@@ -30,46 +30,34 @@
   </main>
 </template>
 
-<script>
-import { mapActions, mapState } from "pinia";
+<script setup>
+import { computed, onMounted } from "vue";
+import { useRoute } from "vue-router";
 
 import JobListing from "@/components/JobResults/JobListing.vue";
-import { useJobsStore, FETCH_JOBS, FILTERED_JOBS } from "@/stores/jobs";
+import { useJobsStore } from "@/stores/jobs";
 
-export default {
-  name: "JobListings",
-  components: { JobListing },
-  computed: {
-    currentPage() {
-      return Number.parseInt(this.$route.query.page || "1");
-    },
-    previousPage() {
-      const previousPage = this.currentPage - 1;
-      const firstPage = 1;
-      return previousPage >= firstPage ? previousPage : undefined;
-    },
-    ...mapState(useJobsStore, {
-      FILTERED_JOBS,
-      jobs: "jobs",
-      nextPage() {
-        const nextPage = this.currentPage + 1;
-        const lastPage = Math.ceil(this.FILTERED_JOBS.length / 10);
-        return nextPage <= lastPage ? nextPage : undefined;
-      },
-      displayedJobs() {
-        const pageNumber = this.currentPage;
-        const resultsPerPage = 10;
-        const firstJobIndex = (pageNumber - 1) * resultsPerPage;
-        const lastJobIndex = pageNumber * resultsPerPage;
-        return this.FILTERED_JOBS.slice(firstJobIndex, lastJobIndex);
-      },
-    }),
-  },
-  async mounted() {
-    this.FETCH_JOBS();
-  },
-  methods: {
-    ...mapActions(useJobsStore, [FETCH_JOBS]),
-  },
-};
+import usePreviousAndNextPages from "@/composables/usePreviousAndNextPages";
+
+const jobsStore = useJobsStore();
+onMounted(jobsStore.FETCH_JOBS);
+
+const route = useRoute();
+
+const FILTERED_JOBS = computed(() => jobsStore.FILTERED_JOBS);
+const lastPage = computed(() => Math.ceil(FILTERED_JOBS.value.length / 10));
+const currentPage = computed(() => Number.parseInt(route.query.page || "1"));
+
+const { previousPage, nextPage } = usePreviousAndNextPages(
+  currentPage,
+  lastPage
+);
+
+const displayedJobs = computed(() => {
+  const pageNumber = currentPage.value;
+  const resultsPerPage = 10;
+  const firstJobIndex = (pageNumber - 1) * resultsPerPage;
+  const lastJobIndex = pageNumber * resultsPerPage;
+  return FILTERED_JOBS.value.slice(firstJobIndex, lastJobIndex);
+});
 </script>

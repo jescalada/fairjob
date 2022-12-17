@@ -4,22 +4,20 @@ import { RouterLinkStub } from "@vue/test-utils";
 import { createTestingPinia } from "@pinia/testing";
 import { useUserStore } from "@/stores/user";
 
+import { useRoute } from "vue-router";
+vi.mock("vue-router");
+
 import MainNav from "@/components/Navigation/MainNav.vue";
 
 describe("MainNav", () => {
   const renderMainNav = () => {
+    useRoute.mockReturnValue({ name: "Home" });
     // const pinia = createTestingPinia({ stubActions: false }); // This is closer to an integration test
     const pinia = createTestingPinia();
-    const $route = {
-      name: "Home",
-    };
 
     render(MainNav, {
       global: {
         plugins: [pinia],
-        mocks: {
-          $route,
-        },
         stubs: {
           FontAwesomeIcon: true,
           RouterLink: RouterLinkStub,
